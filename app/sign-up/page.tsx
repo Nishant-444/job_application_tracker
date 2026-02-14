@@ -43,6 +43,7 @@ export default function SignUp() {
 				setError(result.error.message ?? 'Failed to sign up');
 			} else {
 				router.push('/dashboard');
+				router.refresh();
 			}
 		} catch (error) {
 			setError('An unexpected error occurred');
@@ -78,6 +79,7 @@ export default function SignUp() {
 								id='name'
 								type='text'
 								placeholder='Your Name'
+								minLength={3}
 								value={name}
 								onChange={(e) => setName(e.target.value)}
 								required

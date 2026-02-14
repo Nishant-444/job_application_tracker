@@ -3,6 +3,7 @@ import { betterAuth } from 'better-auth';
 import { prisma } from '../db';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { initializeUserBoard } from '../init-user-board';
 
 export const auth = betterAuth({
 	database: prismaAdapter(prisma, {
@@ -11,6 +12,17 @@ export const auth = betterAuth({
 
 	emailAndPassword: {
 		enabled: true,
+	},
+	databaseHooks: {
+		user: {
+			create: {
+				after: async (user) => {
+					if (user.id) {
+						await initializeUserBoard(user.id);
+					}
+				},
+			},
+		},
 	},
 });
 

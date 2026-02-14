@@ -40,6 +40,7 @@ export default function SignIn() {
 				setError(result.error.message ?? 'Failed to sign in');
 			} else {
 				router.push('/dashboard');
+				router.refresh();
 			}
 		} catch (error) {
 			setError('An unexpected error occurred');
