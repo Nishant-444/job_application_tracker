@@ -71,7 +71,7 @@ model Verification {
 
 model Board {
   id     String @id @default(uuid())
-  name   String
+  name   String 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 

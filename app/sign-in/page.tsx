@@ -43,7 +43,7 @@ export default function SignIn() {
 			}
 		} catch (error) {
 			setError('An unexpected error occurred');
-			console.log(error);
+			console.error('Error', error);
 		} finally {
 			setLoading(false);
 		}

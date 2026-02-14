@@ -39,14 +39,14 @@ export default function SignUp() {
 			});
 
 			if (result.error) {
-				// nullish operator ?? if left side is null/undefined -> returns right side expression
+				// nullish operator `??` if left side is null/undefined -> returns right side expression
 				setError(result.error.message ?? 'Failed to sign up');
 			} else {
 				router.push('/dashboard');
 			}
 		} catch (error) {
 			setError('An unexpected error occurred');
-			console.log(error);
+			console.error('Error', error);
 		} finally {
 			setLoading(false);
 		}
