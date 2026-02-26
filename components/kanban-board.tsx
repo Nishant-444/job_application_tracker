@@ -37,7 +37,10 @@ import {
 import { Button } from './ui/button';
 import CreateJobApplication from './create-job';
 import JobApplicationCard from './job-application-card';
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
+import { deleteColumn } from '@/lib/actions/columns';
+import { toast } from 'sonner';
+import CreateColumn from './create-column';
 
 // Types
 export type BoardWithData = Prisma.BoardGetPayload<{
@@ -92,6 +95,30 @@ function DroppableColumn({
 	// Safely sort the jobs for rendering
 	const sortedJobs = [...(column.jobs || [])].sort((a, b) => a.order - b.order);
 
+	const [isPending, startTransition] = useTransition();
+	function handleDeleteColumn() {
+		// Optional UX: Ask for confirmation since this deletes all jobs inside it
+		if (
+			!window.confirm(
+				`Are you sure you want to delete "${column.name}" and all its jobs?`,
+			)
+		) {
+			return;
+		}
+
+		startTransition(async () => {
+			try {
+				const result = await deleteColumn(column.id);
+				if (result?.error) {
+					toast.error(result.error);
+					return;
+				}
+				toast.success('Column deleted');
+			} catch (err) {
+				toast.error('Failed to delete column');
+			}
+		});
+	}
 	return (
 		<Card className='min-w-75 shrink-0 shadow-md p-0'>
 			<CardHeader
@@ -115,7 +142,10 @@ function DroppableColumn({
 							</Button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align='end'>
-							<DropdownMenuItem className='text-destructive'>
+							<DropdownMenuItem
+								className='text-destructive focus:text-destructive cursor-pointer'
+								onClick={handleDeleteColumn}
+							>
 								<Trash2 className='mr-2 h-4 w-4' />
 								Delete Column
 							</DropdownMenuItem>
@@ -311,6 +341,7 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
 							color: 'bg-gray-500',
 							icon: <Calendar className='h-4 w-4' />,
 						};
+
 						return (
 							<DroppableColumn
 								key={col.id}
@@ -321,6 +352,7 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
 							/>
 						);
 					})}
+					<CreateColumn boardId={board.id} />
 				</div>
 			</div>
 			<DragOverlay>

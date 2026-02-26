@@ -41,19 +41,37 @@ model Session {
   @@map("session")
 }
 
+// model Account {
+//   id           String    @id @default(uuid())
+//   accountId    String
+//   providerId   String
+//   userId       String
+//   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   accessToken  String?
+//   refreshToken String?
+//   idToken      String?
+//   expiresAt    DateTime?
+//   password     String?
+//   createdAt    DateTime  @default(now())
+//   updatedAt    DateTime  @updatedAt
+
+//   @@map("account")
+// }
 model Account {
-  id           String    @id @default(uuid())
-  accountId    String
-  providerId   String
-  userId       String
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accessToken  String?
-  refreshToken String?
-  idToken      String?
-  expiresAt    DateTime?
-  password     String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                    String    @id @default(uuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime? 
+  refreshTokenExpiresAt DateTime? 
+  scope                 String? 
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   @@map("account")
 }
@@ -71,7 +89,7 @@ model Verification {
 
 model Board {
   id     String @id @default(uuid())
-  name   String 
+  name   String
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 

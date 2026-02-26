@@ -9,12 +9,14 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card';
-import { signUp } from '@/lib/auth/auth-client';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { signIn, signUp } from '@/lib/auth/auth-client';
+import { Chrome } from 'lucide-react'; // i know its deprecated but still...
 import Link from 'next/link';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 export default function SignUp() {
 	const [name, setName] = useState('');
@@ -23,8 +25,22 @@ export default function SignUp() {
 
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(false);
+	const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
 	const router = useRouter();
+
+	async function handleGoogleSignIn() {
+		setIsGoogleLoading(true);
+		try {
+			await signIn.social({
+				provider: 'google',
+				callbackURL: '/dashboard',
+			});
+		} catch (error) {
+			toast.error('Failed to sign up with Google');
+			setIsGoogleLoading(false);
+		}
+	}
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
@@ -39,7 +55,6 @@ export default function SignUp() {
 			});
 
 			if (result.error) {
-				// nullish operator `??` if left side is null/undefined -> returns right side expression
 				setError(result.error.message ?? 'Failed to sign up');
 			} else {
 				router.push('/dashboard');
@@ -64,8 +79,34 @@ export default function SignUp() {
 						Create an account to start tracking your job applications
 					</CardDescription>
 				</CardHeader>
-				<form onSubmit={handleSubmit} className='space-y-4'>
-					<CardContent className='space-y-4'>
+
+				<CardContent className='space-y-4'>
+					<Button
+						type='button'
+						variant='outline'
+						className='w-full border-gray-300 text-gray-700 hover:bg-gray-50'
+						onClick={handleGoogleSignIn}
+						disabled={isGoogleLoading || loading}
+					>
+						{isGoogleLoading ?
+							'Redirecting...'
+						:	<>
+								<Chrome className='mr-2 h-4 w-4' />
+								Continue with Google
+							</>
+						}
+					</Button>{' '}
+					<div className='relative'>
+						<div className='absolute inset-0 flex items-center'>
+							<span className='w-full border-t border-gray-200' />
+						</div>
+						<div className='relative flex justify-center text-xs uppercase'>
+							<span className='bg-white px-2 text-muted-foreground'>
+								Or continue with email
+							</span>
+						</div>
+					</div>
+					<form onSubmit={handleSubmit} className='space-y-4'>
 						{error && (
 							<div className='rounded-md bg-destructive/15 p-3 text-sm text-destructive'>
 								{error}
@@ -83,6 +124,7 @@ export default function SignUp() {
 								value={name}
 								onChange={(e) => setName(e.target.value)}
 								required
+								disabled={loading || isGoogleLoading}
 								className='border-gray-300 focus:border-primary focus:ring-primary'
 							/>
 						</div>
@@ -97,6 +139,7 @@ export default function SignUp() {
 								value={email}
 								onChange={(e) => setEmail(e.target.value)}
 								required
+								disabled={loading || isGoogleLoading}
 								className='border-gray-300 focus:border-primary focus:ring-primary'
 							/>
 						</div>
@@ -112,29 +155,32 @@ export default function SignUp() {
 								required
 								minLength={8}
 								placeholder='Your Password'
+								disabled={loading || isGoogleLoading}
 								className='border-gray-300 focus:border-primary focus:ring-primary'
 							/>
 						</div>
-					</CardContent>
-					<CardFooter className='flex flex-col space-y-4'>
+
 						<Button
 							type='submit'
 							className='w-full bg-primary hover:bg-primary/90'
-							disabled={loading}
+							disabled={loading || isGoogleLoading}
 						>
 							{loading ? 'Creating account...' : 'Sign Up'}
 						</Button>
-						<p className='text-center text-sm text-gray-600'>
-							Already have an account?{' '}
-							<Link
-								href='/sign-in'
-								className='font-medium text-primary hover:underline'
-							>
-								Sign in
-							</Link>
-						</p>
-					</CardFooter>
-				</form>
+					</form>
+				</CardContent>
+
+				<CardFooter>
+					<p className='w-full text-center text-sm text-gray-600'>
+						Already have an account?{' '}
+						<Link
+							href='/sign-in'
+							className='font-medium text-primary hover:underline'
+						>
+							Sign in
+						</Link>
+					</p>
+				</CardFooter>
 			</Card>
 		</div>
 	);

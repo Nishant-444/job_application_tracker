@@ -13,8 +13,9 @@ import {
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { createJobApplication } from '@/lib/actions/job-applications';
+import { toast } from 'sonner';
 
 interface CreateJobApplicationProps {
 	columnId: string;
@@ -38,29 +39,37 @@ export default function CreateJobApplication({
 }: CreateJobApplicationProps) {
 	const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
 	const [formData, setFormData] = useState(INITIAL_FORM_DATA);
+	const [isPending, startTransition] = useTransition();
 
-	async function handleSubmit(e: React.SubmitEvent) {
+	function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
 
-		try {
-			const result = await createJobApplication({
-				...formData,
-				columnId,
-				boardId,
-				tags: formData.tags
-					.split(',')
-					.map((tag) => tag.trim())
-					.filter((tag) => tag.length > 0),
-			});
-			if (!result.error) {
+		startTransition(async () => {
+			try {
+				const result = await createJobApplication({
+					...formData,
+					columnId,
+					boardId,
+					tags: formData.tags
+						.split(',')
+						.map((tag) => tag.trim())
+						.filter((tag) => tag.length > 0),
+				});
+
+				if (result?.error) {
+					toast.error(result.error);
+					return;
+				}
+
+				// Handle Success
+				toast.success('Job application created');
 				setFormData(INITIAL_FORM_DATA);
-			} else {
-				console.error('Failed to create job: ', result.error);
-				setIsDialogOpen(false);
+				setIsDialogOpen(false); // 👈 Correctly close the modal
+			} catch (error) {
+				toast.error('An unexpected error occurred');
+				console.error(error);
 			}
-		} catch (error) {
-			console.error(error);
-		}
+		});
 	}
 
 	return (
@@ -87,6 +96,7 @@ export default function CreateJobApplication({
 								<Input
 									id='company'
 									required
+									disabled={isPending}
 									value={formData.company}
 									onChange={(e) =>
 										setFormData({ ...formData, company: e.target.value })
@@ -98,6 +108,7 @@ export default function CreateJobApplication({
 								<Input
 									id='position'
 									required
+									disabled={isPending}
 									value={formData.position}
 									onChange={(e) =>
 										setFormData({ ...formData, position: e.target.value })
@@ -110,6 +121,7 @@ export default function CreateJobApplication({
 								<Label htmlFor='location'>Location</Label>
 								<Input
 									id='location'
+									disabled={isPending}
 									value={formData.location}
 									onChange={(e) =>
 										setFormData({ ...formData, location: e.target.value })
@@ -121,6 +133,7 @@ export default function CreateJobApplication({
 								<Input
 									id='salary'
 									placeholder='e.g., $100k - $150k'
+									disabled={isPending}
 									value={formData.salary}
 									onChange={(e) =>
 										setFormData({ ...formData, salary: e.target.value })
@@ -134,6 +147,7 @@ export default function CreateJobApplication({
 								id='jobUrl'
 								type='url'
 								placeholder='https://...'
+								disabled={isPending}
 								value={formData.jobUrl}
 								onChange={(e) =>
 									setFormData({ ...formData, jobUrl: e.target.value })
@@ -145,6 +159,7 @@ export default function CreateJobApplication({
 							<Input
 								id='tags'
 								placeholder='React, Tailwind, High Pay'
+								disabled={isPending}
 								value={formData.tags}
 								onChange={(e) =>
 									setFormData({ ...formData, tags: e.target.value })
@@ -157,6 +172,7 @@ export default function CreateJobApplication({
 								id='description'
 								rows={3}
 								placeholder='Brief description of the role...'
+								disabled={isPending}
 								value={formData.description}
 								onChange={(e) =>
 									setFormData({ ...formData, description: e.target.value })
@@ -168,6 +184,7 @@ export default function CreateJobApplication({
 							<Textarea
 								id='notes'
 								rows={4}
+								disabled={isPending}
 								value={formData.notes}
 								onChange={(e) =>
 									setFormData({ ...formData, notes: e.target.value })
@@ -180,11 +197,14 @@ export default function CreateJobApplication({
 						<Button
 							type='button'
 							variant='outline'
+							disabled={isPending}
 							onClick={() => setIsDialogOpen(false)}
 						>
 							Cancel
 						</Button>
-						<Button type='submit'>Add Application</Button>
+						<Button type='submit' disabled={isPending}>
+							{isPending ? 'Adding...' : 'Add Application'}
+						</Button>
 					</DialogFooter>
 				</form>
 			</DialogContent>
