@@ -37,11 +37,9 @@ import {
 import { Button } from './ui/button';
 import CreateJobApplication from './create-job';
 import JobApplicationCard from './job-application-card';
-import { updateJobApplication } from '@/lib/actions/job-applications';
-import { toast } from 'sonner';
 import { useState } from 'react';
-import { prisma } from '@/lib/db';
 
+// Types
 export type BoardWithData = Prisma.BoardGetPayload<{
 	include: {
 		columns: {
@@ -90,11 +88,12 @@ function DroppableColumn({
 			columnId: column.id,
 		},
 	});
-	const sortedJobs = column.jobs || [];
+
+	// Safely sort the jobs for rendering
+	const sortedJobs = [...(column.jobs || [])].sort((a, b) => a.order - b.order);
 
 	return (
-		<Card className='w-full shadow-md p-0'>
-			{' '}
+		<Card className='min-w-75 shrink-0 shadow-md p-0'>
 			<CardHeader
 				className={`${config.color} text-white rounded-t-lg pb-3 pt-3`}
 			>
@@ -118,7 +117,6 @@ function DroppableColumn({
 						<DropdownMenuContent align='end'>
 							<DropdownMenuItem className='text-destructive'>
 								<Trash2 className='mr-2 h-4 w-4' />
-								{/* Todo -- add the correct functionality  */}
 								Delete Column
 							</DropdownMenuItem>
 						</DropdownMenuContent>
@@ -198,10 +196,7 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
 		}),
 	);
 
-	const sortedColumns = [...(board.columns || [])].sort(
-		(a, b) => a.order - b.order,
-	);
-	// console.log(board.columns[0]?.jobs);
+	const sortedColumns = [...(columns || [])].sort((a, b) => a.order - b.order);
 
 	async function handleDragStart(event: DragStartEvent) {
 		setActiveId(event.active.id as string);
@@ -210,13 +205,14 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
 	async function handleDragEnd(event: DragEndEvent) {
 		const { active, over } = event;
 		setActiveId(null);
+
 		if (!over || !board.id) return;
 
 		const activeId = active.id as string;
 		const overId = over.id as string;
 
 		let draggedJob: JobApplication | null = null;
-		let sourceColumn: Column | null = null;
+		let sourceColumn: ColumnWithJobs | null = null;
 		let sourceIndex = -1;
 
 		for (const column of sortedColumns) {
@@ -225,7 +221,7 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
 
 			if (index !== -1) {
 				draggedJob = jobs[index];
-				sourceColumn = column;
+				sourceColumn = column as ColumnWithJobs;
 				sourceIndex = index;
 				break;
 			}
@@ -243,7 +239,7 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
 
 		if (targetColumn) {
 			targetColumnId = targetColumn.id;
-			const jobsInTarget = targetColumn.jobs
+			const jobsInTarget = [...(targetColumn.jobs || [])]
 				.filter((j) => j.id !== activeId)
 				.sort((a, b) => a.order - b.order);
 
@@ -261,11 +257,13 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
 
 			if (!targetColumnObj) return;
 
-			const allJobsInTargetOriginal =
-				targetColumnObj.jobs.sort((a, b) => a.order - b.order) || [];
+			const allJobsInTargetOriginal = [...(targetColumnObj.jobs || [])].sort(
+				(a, b) => a.order - b.order,
+			);
 
-			const allJobsInTargetFiltered =
-				allJobsInTargetOriginal.filter((j) => j.id !== activeId) || [];
+			const allJobsInTargetFiltered = allJobsInTargetOriginal.filter(
+				(j) => j.id !== activeId,
+			);
 
 			const targetIndexInOriginal = allJobsInTargetOriginal.findIndex(
 				(j) => j.id === overId,
@@ -282,10 +280,10 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
 						newOrder = targetIndexInFiltered;
 					}
 				} else {
-					newOrder = allJobsInTargetFiltered.length;
+					newOrder = targetIndexInFiltered;
 				}
 			} else {
-				newOrder = targetIndexInFiltered;
+				newOrder = allJobsInTargetFiltered.length;
 			}
 		} else {
 			return;
@@ -294,13 +292,16 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
 		if (!targetColumnId) return;
 		await moveJob(activeId, targetColumnId, newOrder);
 	}
+
 	const activeJob = sortedColumns
 		.flatMap((col) => col.jobs || [])
 		.find((job) => job.id === activeId);
+
 	return (
 		<DndContext
 			sensors={sensors}
 			collisionDetection={closestCorners}
+			onDragStart={handleDragStart}
 			onDragEnd={handleDragEnd}
 		>
 			<div className='space-y-4'>
@@ -313,7 +314,7 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
 						return (
 							<DroppableColumn
 								key={col.id}
-								column={col}
+								column={col as ColumnWithJobs}
 								config={config}
 								boardId={board.id}
 								sortedColumns={sortedColumns}
