@@ -40,6 +40,7 @@
 	"devDependencies": {
 		"@tailwindcss/postcss": "^4.1.18",
 		"@types/node": "^20",
+		"@types/pg": "^8.16.0",
 		"@types/react": "^19",
 		"@types/react-dom": "^19",
 		"enhanced-resolve": "^5.19.0",
