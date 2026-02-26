@@ -21,6 +21,9 @@ COPY . .
 
 # generate prisma client before building nextjs
 RUN pnpm dlx prisma generate
+
+ARG DATABASE_URL
+ENV DATABASE_URL=$DATABASE_URL
 # build nextjs app 
 RUN pnpm run build
 
