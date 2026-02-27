@@ -7,7 +7,6 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -22,7 +21,8 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: your-docker-hub-username/repo-name:latest
+          # This now uses your actual Docker username from your secrets
+          tags: ${{ secrets.DOCKER_USERNAME }}/job-tracker:latest
           build-args: |
             DATABASE_URL=${{ secrets.DATABASE_URL }}
             NEXT_PUBLIC_BETTER_AUTH_URL=https://jobs.nishants.dev
@@ -31,7 +31,6 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-
     steps:
       - name: SSH into EC2 and Deploy
         uses: appleboy/ssh-action@master
@@ -40,14 +39,6 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            if ! [ -x "$(command -v docker)" ]; then
-              sudo apt-get update
-              sudo apt-get install -y docker.io
-              sudo systemctl start docker
-              sudo systemctl enable docker
-              sudo usermod -aG docker ubuntu
-            fi
-
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/job-tracker:latest
             sudo docker stop job-tracker || true
             sudo docker rm job-tracker || true
@@ -58,7 +49,8 @@ jobs:
               -p 3000:3000 \
               -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
               -e BETTER_AUTH_SECRET="${{ secrets.BETTER_AUTH_SECRET }}" \
-              -e BETTER_AUTH_URL="http://tracker.nishants.dev:3000" \
+              -e BETTER_AUTH_URL="https://jobs.nishants.dev" \
+              -e NEXT_PUBLIC_BETTER_AUTH_URL="https://jobs.nishants.dev" \
               -e GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
               -e GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
               ${{ secrets.DOCKER_USERNAME }}/job-tracker:latest
