@@ -18,14 +18,15 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and Push Docker Image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/job-tracker:latest
+          tags: your-docker-hub-username/repo-name:latest
           build-args: |
             DATABASE_URL=${{ secrets.DATABASE_URL }}
+            NEXT_PUBLIC_BETTER_AUTH_URL=https://jobs.nishants.dev
+            BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }}
 
   deploy:
     needs: build-and-push
