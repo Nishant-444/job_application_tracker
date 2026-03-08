@@ -1,8 +1,6 @@
-# Job Application Tracker - Full-Stack Kanban Board
+# JobTrack - Full-Stack Job Application Platform
 
-**Version:** 0.1.0
-**Status:** Production
-**Tech Stack:** TypeScript, Next.js, React, PostgreSQL, Prisma, Docker
+**Tech Stack:** Next.js, NeonDB, PostgreSQL, Prisma, Shadcn, BetterAuth
 
 ![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
@@ -10,7 +8,8 @@
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Neon](https://img.shields.io/badge/Neon-00E699?style=for-the-badge&logo=neon&logoColor=black)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
 ![Better Auth](https://img.shields.io/badge/Better_Auth-000000?style=for-the-badge)
 ![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-000000?style=for-the-badge&logo=shadcnui&logoColor=white)
 
@@ -18,18 +17,18 @@
 
 ## Project Overview
 
-Job Application Tracker is a full-stack Kanban board web application for organizing and managing job applications through every stage of the hiring process. Users sign up, get an automatic board with preset pipeline columns, and can drag-and-drop job application cards between stages. Built with the Next.js 16 App Router, React 19 Server Components, and Prisma 7 ORM backed by PostgreSQL.
+JobTrack is a user-friendly platform that helps job seekers organize their applications, track interview progress, and manage the entire hiring lifecycle in one central, secure dashboard. Built with the Next.js App Router, React Server Components, and Prisma ORM backed by Serverless Postgres (Neon), and deployed on Vercel.
 
 **Key Capabilities:**
 
 - **Kanban Board:** Drag-and-drop interface for moving job cards between pipeline stages using dnd-kit
 - **Custom Columns:** Create, delete, and reorder columns to fit any workflow
 - **Job Application Cards:** Track company, position, location, salary, URL, tags, description, and notes
-- **Authentication:** Email/password and Google OAuth via Better Auth
+- **Authentication:** Secure, cookie-based session management via Better Auth with Google OAuth 2.0, handling edge-compatible token hashing and cross-origin callback validation
 - **Automatic Onboarding:** New users receive a default board with five preset columns
 - **Optimistic UI:** Instant feedback on card moves before server confirmation
 - **Server Actions:** All mutations handled via Next.js server actions for type-safe, server-side logic
-- **Docker Support:** Multi-stage Dockerfile for containerized production deployment
+- **Serverless Deployment:** Deployed on Vercel with automated zero-downtime deployments and efficient dependency caching
 
 ---
 
@@ -42,7 +41,7 @@ Browser --> Next.js Middleware (proxy.ts) --> App Router --> React Server Compon
                                                 |
                                      Prisma ORM (pg adapter)
                                                 |
-                                     PostgreSQL (Neon / local)
+                                     Serverless PostgreSQL (Neon)
 ```
 
 **Request Flow:**
@@ -61,7 +60,7 @@ Browser --> Next.js Middleware (proxy.ts) --> App Router --> React Server Compon
 - **React Server Components:** Board data fetched on the server to eliminate client-side loading states
 - **Server Actions:** Type-safe mutations without building a separate REST/GraphQL API layer
 - **Optimistic Updates:** Client state updated immediately via `useBoard` hook; rolled back on server error
-- **Prisma pg Adapter:** Direct PostgreSQL connection via `pg` pool, compatible with both Neon serverless and standard PostgreSQL
+- **Prisma pg Adapter:** Direct PostgreSQL connection via `@neondatabase/serverless` adapter, optimizing connection pooling for serverless environments with end-to-end type safety
 - **Middleware Route Protection:** Authentication checks at the edge before page rendering begins
 
 ---
@@ -76,7 +75,8 @@ Browser --> Next.js Middleware (proxy.ts) --> App Router --> React Server Compon
 ![Prisma](https://img.shields.io/badge/Prisma-7.4-2D3748?style=flat-square&logo=prisma&logoColor=white)
 ![Better Auth](https://img.shields.io/badge/Better_Auth-1.4-000000?style=flat-square)
 ![dnd--kit](https://img.shields.io/badge/dnd--kit-6.3-000000?style=flat-square)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
+![Neon](https://img.shields.io/badge/Neon-00E699?style=flat-square&logo=neon&logoColor=black)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white)
 
 | Layer           | Technology           | Version | Purpose                                            |
 | --------------- | -------------------- | ------- | -------------------------------------------------- |
@@ -87,12 +87,12 @@ Browser --> Next.js Middleware (proxy.ts) --> App Router --> React Server Compon
 | UI Components   | shadcn/ui (New York) | -       | Pre-built accessible components (Radix primitives) |
 | Icons           | Lucide React         | v0.563  | SVG icon library                                   |
 | Drag and Drop   | dnd-kit              | v6.3    | Accessible drag-and-drop for Kanban interactions   |
-| Database        | PostgreSQL           | -       | Relational data storage (Neon serverless or local) |
+| Database        | Neon PostgreSQL      | -       | Serverless Postgres with connection pooling        |
 | ORM             | Prisma               | v7.4.0  | Type-safe queries, schema migrations, pg adapter   |
 | Authentication  | Better Auth          | v1.4.18 | Email/password, Google OAuth, session management   |
 | Notifications   | Sonner               | v2.0.7  | Toast notification system                          |
 | Package Manager | pnpm                 | -       | Fast, disk-efficient dependency management         |
-| Container       | Docker               | -       | Multi-stage production build                       |
+| Deployment      | Vercel               | -       | Serverless hosting with zero-downtime deployments  |
 
 ---
 
@@ -305,54 +305,41 @@ The middleware uses `auth.api.getSession()` with the raw request headers (avoids
 
 ---
 
-## Deployment Architecture
+## Deployment
 
-### Docker (Production)
+### Vercel (Production)
 
-The project includes a multi-stage Dockerfile optimized for production:
+The project is deployed on Vercel with a deterministic CI/CD pipeline utilizing strict package execution policies (pnpm), ensuring reliable build environments, efficient dependency caching, and automated zero-downtime deployments.
 
-**Stage 1 -- deps:** Installs all dependencies using pnpm with a frozen lockfile on Node.js 22 Alpine.
+**Deployment Pipeline:**
 
-**Stage 2 -- builder:** Copies dependencies, generates the Prisma client, and builds the Next.js application in standalone output mode.
+1. Push to `main` branch triggers an automatic build on Vercel
+2. Vercel detects the pnpm lockfile and installs dependencies with `pnpm install --frozen-lockfile`
+3. Prisma client is generated during the build step
+4. Next.js application is built and deployed as serverless functions
+5. Zero-downtime deployment with automatic rollback on failure
 
-**Stage 3 -- runner:** Minimal production image running as a non-root user (`nextjs:nodejs`). Copies only the standalone build output and static assets.
+**Infrastructure:**
 
-**Docker Configuration:**
+| Component      | Service     | Purpose                                       |
+| -------------- | ----------- | --------------------------------------------- |
+| Hosting        | Vercel      | Serverless Next.js hosting with edge CDN      |
+| Database       | Neon        | Serverless PostgreSQL with connection pooling |
+| Authentication | Better Auth | Cookie-based sessions with Google OAuth       |
+| DNS/SSL        | Vercel      | Automatic HTTPS and domain management         |
 
-```yaml
-Base Image: node:22-alpine
-Output Mode: Next.js standalone
-User: nextjs (UID 1001, non-root)
-Port: 3000
-Host: 0.0.0.0
-Dependencies: libc6-compat, openssl (required by Prisma)
+### Environment Variables (Vercel)
+
+Configure the following environment variables in the Vercel dashboard:
+
+```env
+DATABASE_URL="postgresql://<user>:<password>@<host>/<database>?sslmode=require"
+BETTER_AUTH_URL="https://your-domain.vercel.app"
+NEXT_PUBLIC_BETTER_AUTH_URL="https://your-domain.vercel.app"
+BETTER_AUTH_SECRET="<a-random-secret-string>"
+GOOGLE_CLIENT_ID="<your-google-client-id>"
+GOOGLE_CLIENT_SECRET="<your-google-client-secret>"
 ```
-
-### Build the Docker Image
-
-```bash
-docker build \
-  --build-arg DATABASE_URL="<your-database-url>" \
-  --build-arg NEXT_PUBLIC_BETTER_AUTH_URL="<your-app-url>" \
-  --build-arg BETTER_AUTH_SECRET="<your-secret>" \
-  --build-arg GOOGLE_CLIENT_ID="<your-google-client-id>" \
-  --build-arg GOOGLE_CLIENT_SECRET="<your-google-client-secret>" \
-  -t job-application-tracker .
-```
-
-### Run the Container
-
-```bash
-docker run -p 3000:3000 \
-  -e DATABASE_URL="<your-database-url>" \
-  -e BETTER_AUTH_SECRET="<your-secret>" \
-  -e NEXT_PUBLIC_BETTER_AUTH_URL="<your-app-url>" \
-  -e GOOGLE_CLIENT_ID="<your-google-client-id>" \
-  -e GOOGLE_CLIENT_SECRET="<your-google-client-secret>" \
-  job-application-tracker
-```
-
-The container exposes port 3000 and listens on `0.0.0.0`.
 
 ---
 
@@ -363,7 +350,7 @@ The container exposes port 3000 and listens on `0.0.0.0`.
 ```
 Node.js v22+
 pnpm (enable via: corepack enable pnpm)
-PostgreSQL (local instance or hosted, e.g., Neon)
+Neon PostgreSQL account (or local PostgreSQL instance)
 ```
 
 ### Local Development Setup
@@ -485,9 +472,8 @@ job_application_tracker/
 │
 ├── proxy.ts                     # Next.js middleware for auth route protection
 ├── prisma.config.ts             # Prisma configuration
-├── Dockerfile                   # Multi-stage production Docker build
 ├── components.json              # shadcn/ui configuration
-├── next.config.ts               # Next.js configuration (standalone output)
+├── next.config.ts               # Next.js configuration
 ├── package.json
 └── tsconfig.json
 ```
@@ -514,7 +500,6 @@ job_application_tracker/
 - Dashboard analytics (application counts by stage, timeline charts)
 - Email verification on registration
 - Dark mode support via next-themes (dependency already installed)
-- Redis caching layer for session data
 
 ---
 
@@ -529,7 +514,8 @@ job_application_tracker/
 ### Why Prisma with the pg Adapter?
 
 - **Type Safety:** Generated types from the schema ensure queries are correct at compile time
-- **Neon Compatibility:** The `@prisma/adapter-pg` and `@neondatabase/serverless` packages allow the same codebase to connect to Neon serverless or a standard PostgreSQL instance
+- **Neon Compatibility:** The `@prisma/adapter-pg` and `@neondatabase/serverless` packages optimize connection pooling for serverless environments
+- **End-to-End Type Safety:** Strict typing from database schema through ORM to API layer eliminates runtime type errors
 - **Migration Management:** Schema changes tracked via Prisma migrations
 
 ### Why Better Auth over NextAuth?
@@ -537,6 +523,8 @@ job_application_tracker/
 - **Prisma-Native Adapter:** First-class integration with Prisma ORM
 - **Database Hooks:** `databaseHooks.user.create.after` enables automatic board initialization on sign-up
 - **Cookie Caching:** Built-in session cookie cache reduces database lookups
+- **Edge-Compatible Token Hashing:** Correctly handles token hashing in edge/serverless runtimes
+- **Cross-Origin Callback Validation:** Secure handling of OAuth callback URLs across environments
 
 ### Why dnd-kit over React DnD / React Beautiful DnD?
 
@@ -549,10 +537,19 @@ job_application_tracker/
 - **Insertions Without Reindexing:** A card inserted between order 1.0 and 2.0 gets order 1.5, avoiding the need to update every other card's order in the column
 - **Trade-off:** Over many insertions, float precision can degrade; periodic rebalancing would be needed at scale
 
-### Why Standalone Output Mode?
+### Why Vercel over Containerized Deployment?
 
-- **Minimal Docker Image:** `output: 'standalone'` produces a self-contained `server.js` with only the required `node_modules`, significantly reducing container size
-- **No Node Modules in Production:** The runner stage only copies the standalone output, not the full `node_modules` directory
+- **Zero Configuration:** Vercel auto-detects the Next.js framework and pnpm lockfile, eliminating manual build pipeline setup
+- **Serverless Scaling:** Functions scale automatically with traffic; no container orchestration needed
+- **Deterministic Builds:** Strict pnpm execution policy with frozen lockfile ensures reproducible builds
+- **Edge Network:** Static assets and middleware deployed to Vercel's global edge network for low-latency responses
+- **Simplified Architecture:** Removing Docker and AWS infrastructure reduces operational complexity while maintaining production reliability
+
+### Why Neon over Self-Hosted PostgreSQL?
+
+- **Serverless Compatibility:** Connection pooling optimized for serverless function environments where connections are short-lived
+- **Auto-Scaling:** Database scales automatically without manual provisioning or capacity planning
+- **Branching:** Database branching enables safe schema migration testing before production deployment
 
 ---
 
